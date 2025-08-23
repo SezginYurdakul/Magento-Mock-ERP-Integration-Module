@@ -1,0 +1,5 @@
+# Ignore everything in src except src/app/code
+/src/*
+!/src/app/
+/src/app/*
+!/src/app/code/
