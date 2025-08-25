@@ -10,6 +10,7 @@ use Magento\Catalog\Model\ProductFactory;
 use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use Magento\InventoryApi\Api\SourceItemsSaveInterface;
+use Custom\ErpIntegration\Service\ErpIntegrationLogger;
 
 class ProductActionService
 {
@@ -17,7 +18,7 @@ class ProductActionService
     private SourceItemsSaveInterface $sourceItemsSave;
     private SourceItemInterfaceFactory $sourceItemFactory;
     private ProductFactory $productFactory;
-    private ErpLogger $erpLogger;
+    private ErpIntegrationLogger $erpLogger;
     private const DEFAULT_SOURCE = 'default';
 
     public function __construct(
@@ -25,7 +26,7 @@ class ProductActionService
         SourceItemsSaveInterface $sourceItemsSave,
         SourceItemInterfaceFactory $sourceItemFactory,
         ProductFactory $productFactory,
-        ErpLogger $erpLogger
+        ErpIntegrationLogger $erpLogger
     ) {
         $this->productRepository = $productRepository;
         $this->sourceItemsSave = $sourceItemsSave;

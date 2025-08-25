@@ -2,20 +2,21 @@
 namespace Custom\ErpIntegration\Model;
 
 use Symfony\Component\Console\Output\OutputInterface;
+use Custom\ErpIntegration\Service\ErpIntegrationLogger;
 
 class ProductImporter
 {
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var ErpIntegrationLogger
      */
-    protected $logger;
+    protected $erpLogger;
 
     /**
-     * @param \Psr\Log\LoggerInterface $logger
+     * @param ErpIntegrationLogger $erpLogger
      */
-    public function __construct(\Psr\Log\LoggerInterface $logger)
+    public function __construct(ErpIntegrationLogger $erpLogger)
     {
-        $this->logger = $logger;
+        $this->erpLogger = $erpLogger;
     }
     /**
      * Reads the ERP product JSON file and returns the data
@@ -60,7 +61,7 @@ class ProductImporter
     {
         foreach ($products as $product) {
             $msg = '[ERP Import] SKU: ' . ($product['sku'] ?? '-') . ', Price: ' . ($product['price'] ?? '-') . ', Qty: ' . ($product['qty'] ?? '-');
-            $this->logger->info($msg);
+            $this->erpLogger->info($msg);
             if ($output) {
                 $output->writeln($msg);
             }

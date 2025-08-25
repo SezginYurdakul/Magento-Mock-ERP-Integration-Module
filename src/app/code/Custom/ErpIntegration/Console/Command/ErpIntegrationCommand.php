@@ -6,7 +6,7 @@ namespace Custom\ErpIntegration\Console\Command;
 
 use Custom\ErpIntegration\Model\ProductImporter;
 use Custom\ErpIntegration\Service\ProductActionService;
-use Custom\ErpIntegration\Service\ErpLogger;
+use Custom\ErpIntegration\Service\ErpIntegrationLogger;
 use Custom\ErpIntegration\Service\ProductInputValidator;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\State;
@@ -26,7 +26,7 @@ class ErpIntegrationCommand extends Command
     private State $appState;
     private ScopeConfigInterface $scopeConfig;
     private ProductActionService $productActionService;
-    private ErpLogger $erpLogger;
+    private ErpIntegrationLogger $erpLogger;
     private ProductInputValidator $inputValidator;
 
     public function __construct(
@@ -34,7 +34,7 @@ class ErpIntegrationCommand extends Command
         State $appState,
         ScopeConfigInterface $scopeConfig,
         ProductActionService $productActionService,
-        ErpLogger $erpLogger,
+        ErpIntegrationLogger $erpLogger,
         ProductInputValidator $inputValidator
     ) {
         $this->productImporter = $productImporter;
