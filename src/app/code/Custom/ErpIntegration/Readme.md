@@ -1,12 +1,3 @@
-## Admin Panel Setting
-
-You can set the JSON file path from the Magento admin panel:
-
-- Go to **Stores > Configuration > General > ERP Integration > General Settings**
-- Set the **ERP Products JSON File Path** (relative to Magento root, e.g. var/import/erp_products.json)
-- This value will be used by default if no file path is provided to the CLI command.
-
-
 # Custom_ErpIntegration Magento 2 Module
 
 ## System Requirements
@@ -154,3 +145,81 @@ During the operation of this module, error and summary messages are recorded in 
 Each reason is logged on a separate line with a timestamp.
 
 > **Note:** The same summary and reason messages are shown both in the console output and in the `var/log/magento.cron.log` file. This is intentional for full transparency: users running the CLI see the same actionable information as what is recorded in the logs. 
+
+# Order Integration: Export, Status Update, and Cancel
+
+This module also exports order data to a JSON file and logs all actions for ERP integration. The process covers order creation, status changes (e.g. processing), and cancellation.
+
+## When an Order is Created
+- When a new order is placed, its data is exported to `var/export/erp_orders.json`.
+- All key order details, customer and address info, items, and payment method are included in the JSON.
+- A successful export is logged as:
+
+```
+[2025-08-25T10:38:37.559192+00:00] erp_integration.INFO: Order #000000028 successfully exported to ERP JSON file. [] []
+```
+
+### Example JSON
+```json
+{
+    "increment_id": "000000028",
+    "customer_id": "1",
+    "created_at": null,
+    "grand_total": 178.2,
+    "currency": "USD",
+    "status": "processing",
+    "store_id": 1,
+    "coupon_code": "",
+    "discount_amount": -40,
+    "payment_method": "checkmo",
+    "billing_address": {
+        "firstname": "Veronica",
+        "lastname": "Costello",
+        "street": "6146 Honey Bluff Parkway",
+        "city": "Calder",
+        "postcode": "49628-7978",
+        "country": "US",
+        "telephone": "(555) 229-3326"
+    },
+    "shipping_address": {
+        "firstname": "Veronica",
+        "lastname": "Costello",
+        "street": "6146 Honey Bluff Parkway",
+        "city": "Calder",
+        "postcode": "49628-7978",
+        "country": "US",
+        "telephone": "(555) 229-3326"
+    },
+    "items": [
+        {
+            "sku": "24-MB01",
+            "name": "Joust Duffle Bag",
+            "qty_ordered": 1,
+            "price": 200
+        }
+    ]
+}
+```
+
+## When an Order is Canceled
+- When an order is canceled, the `status` field in the JSON is set to "canceled" for that order.
+- A successful cancel update is logged as:
+
+```
+[2025-08-25T10:38:51.736078+00:00] erp_integration.INFO: Order #000000028 marked as canceled in ERP JSON file. [] []
+```
+
+## Logging
+All actions are logged in `var/log/magento.erp_integration.log`. Both successful and failed operations are recorded for full traceability.
+
+## Notes
+- The JSON file is updated on every order creation and status change.
+- Status updates (e.g. processing, canceled) are only processed if the status actually changes.
+- See above for example JSON and log formats.
+## Admin Panel Setting
+
+You can set the JSON file path from the Magento admin panel:
+
+- Go to **Stores > Configuration > General > ERP Integration > General Settings**
+- Set the **ERP Products JSON File Path** (relative to Magento root, e.g. var/import/erp_products.json)
+- This value will be used by default if no file path is provided to the CLI command.
