@@ -11,6 +11,7 @@ use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use Magento\InventoryApi\Api\SourceItemsSaveInterface;
 use Custom\ErpIntegration\Service\ErpIntegrationLogger;
+use Custom\ErpIntegration\Service\ProductInputValidator;
 
 class ProductActionService
 {
@@ -19,6 +20,7 @@ class ProductActionService
     private SourceItemInterfaceFactory $sourceItemFactory;
     private ProductFactory $productFactory;
     private ErpIntegrationLogger $erpLogger;
+    private ProductInputValidator $inputValidator;
     private const DEFAULT_SOURCE = 'default';
 
     public function __construct(
@@ -26,17 +28,24 @@ class ProductActionService
         SourceItemsSaveInterface $sourceItemsSave,
         SourceItemInterfaceFactory $sourceItemFactory,
         ProductFactory $productFactory,
-        ErpIntegrationLogger $erpLogger
+        ErpIntegrationLogger $erpLogger,
+        ProductInputValidator $inputValidator
     ) {
         $this->productRepository = $productRepository;
         $this->sourceItemsSave = $sourceItemsSave;
         $this->sourceItemFactory = $sourceItemFactory;
         $this->productFactory = $productFactory;
         $this->erpLogger = $erpLogger;
+        $this->inputValidator = $inputValidator;
     }
 
     public function createProduct(array $productData, OutputInterface $output, ?string &$failMsg = null): bool
     {
+        $errors = [];
+        if (!$this->inputValidator->validate($productData, $errors)) {
+            $failMsg = implode("; ", $errors);
+            return false;
+        }
         $sku = $productData['sku'];
         $name = $productData['name'] ?? 'New Product';
         $price = $productData['price'] ?? 0;
@@ -54,22 +63,7 @@ class ProductActionService
             // Product does not exist, continue to create
         }
 
-        if ((float)$price < 0) {
-            $failMsg = sprintf('Product with SKU "%s" could not be created: price cannot be negative (%.2f)', $sku, $price);
-            return false;
-        }
-
-        $sources = $productData['sources'];
-        foreach ($sources as $sourceData) {
-            $sourceCode = $sourceData['source_code'] ?? self::DEFAULT_SOURCE;
-            $qty = isset($sourceData['qty']) ? (float)$sourceData['qty'] : null;
-            if ($qty === null) continue;
-            if ($qty < 0) {
-                $failMsg = sprintf('Product with SKU "%s" could not be created: quantity for source "%s" cannot be negative (%.2f)', $sku, $sourceCode, $qty);
-                return false;
-            }
-        }
-
+        $sources = $productData['sources'] ?? [];
         $product = $this->productFactory->create();
         $product->setSku($sku);
         $product->setName($name);
@@ -83,7 +77,7 @@ class ProductActionService
         $sourceItems = [];
         foreach ($sources as $sourceData) {
             $sourceCode = $sourceData['source_code'] ?? self::DEFAULT_SOURCE;
-            $qty = isset($sourceData['qty']) ? (float)$sourceData['qty'] : null;
+            $qty = isset($sourceData['quantity']) ? (float)$sourceData['quantity'] : null;
             if ($qty === null) continue;
             /** @var SourceItemInterface $sourceItem */
             $sourceItem = $this->sourceItemFactory->create();
@@ -99,31 +93,32 @@ class ProductActionService
         if ($sourceItems) {
             $this->sourceItemsSave->execute($sourceItems);
         }
-    $msg = sprintf('Created SKU: %s | Name: %s | Price: %s | Sources: %s', $sku, $name, $price, json_encode($sources));
-    $output->writeln('<info>' . $msg . '</info>');
-    $this->erpLogger->info($msg, $output);
-    return true;
+        $msg = sprintf('Created SKU: %s | Name: %s | Price: %s | Sources: %s', $sku, $name, $price, json_encode($sources));
+        $output->writeln('<info>' . $msg . '</info>');
+        $this->erpLogger->info($msg, $output);
+        return true;
     }
 
     public function updateProduct(array $productData, OutputInterface $output, ?string &$failMsg = null): bool
     {
+        $errors = [];
+        if (!$this->inputValidator->validate($productData, $errors)) {
+            $failMsg = implode("; ", $errors);
+            return false;
+        }
         $sku   = $productData['sku'];
         $price = $productData['price'] ?? null;
         $product = $this->productRepository->get($sku);
         $changed = false;
         if ($price !== null) {
             $price = (float)$price;
-            if ($price < 0) {
-                $failMsg = sprintf('Product with SKU "%s" could not be updated: price cannot be negative (%.2f)', $sku, $price);
-                return false;
-            }
             if ((float)$product->getPrice() !== $price) {
                 $product->setPrice($price);
                 $changed = true;
             }
         }
         // Multi-source support
-        $sources = $productData['sources'];
+        $sources = $productData['sources'] ?? [];
         $sourceChanged = false;
         // Get existing source items
         $existingSourceItems = [];
@@ -147,12 +142,8 @@ class ProductActionService
         $sourceItems = [];
         foreach ($sources as $sourceData) {
             $sourceCode = $sourceData['source_code'] ?? self::DEFAULT_SOURCE;
-            $qty = isset($sourceData['qty']) ? (float)$sourceData['qty'] : null;
+            $qty = isset($sourceData['quantity']) ? (float)$sourceData['quantity'] : null;
             if ($qty === null) continue;
-            if ($qty < 0) {
-                $failMsg = sprintf('Product with SKU "%s" could not be updated: quantity for source "%s" cannot be negative (%.2f)', $sku, $sourceCode, $qty);
-                return false;
-            }
             $newStatus = $qty > 0 ? SourceItemInterface::STATUS_IN_STOCK : SourceItemInterface::STATUS_OUT_OF_STOCK;
             $existing = $existingSourceItems[$sourceCode] ?? null;
             if ($existing && $existing['qty'] === $qty && $existing['status'] === $newStatus) {

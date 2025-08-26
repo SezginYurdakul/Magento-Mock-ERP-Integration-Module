@@ -18,6 +18,11 @@ class OrderPlaceAfterObserver implements ObserverInterface
         $this->erpLogger = $erpLogger;
     }
 
+    /**
+     * Summary of execute
+     * @param \Magento\Framework\Event\Observer $observer
+     * @return void
+     */
 public function execute(Observer $observer)
 {
     $order = $observer->getEvent()->getOrder();

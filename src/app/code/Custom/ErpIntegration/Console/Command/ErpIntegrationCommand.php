@@ -46,6 +46,16 @@ class ErpIntegrationCommand extends Command
         parent::__construct();
     }
 
+
+    /**
+     * Configures the settings or parameters for the current context.
+     *
+     * This function is typically used to set up or customize options before execution.
+     * It allows for flexible adjustment of behavior based on provided configuration values.
+     *
+     * @param array $options Optional. An associative array of configuration options.
+     * @return void
+     */
     protected function configure(): void
     {
         $this->setName('erp:integration:run')
@@ -58,6 +68,15 @@ class ErpIntegrationCommand extends Command
         parent::configure();
     }
 
+    /**
+     * Command class for ERP Integration.
+     *
+     * This class defines the console command for ERP integration tasks.
+     * 
+     * The `execute` function is responsible for handling the main logic
+     * when the command is run from the Magento CLI. It should contain
+     * the integration process or trigger the required ERP actions.
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
@@ -85,7 +104,6 @@ class ErpIntegrationCommand extends Command
 
         // Validate input, but always process enable/disable for all products
         $validationErrors = [];
-        $allValid = $this->inputValidator->validateAll($products, $validationErrors);
 
         $updated = 0;
         $created = 0;
